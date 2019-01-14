@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-using System.IO;
+using System.IO; 
 
 
 namespace ConsoleApp2
@@ -26,7 +26,7 @@ namespace ConsoleApp2
 
             var interval = new TimeSpan(0, 0, 1);
             var startTime = DateTime.Now;
-            var endTime = startTime + TimeSpan.FromSeconds(100000000);
+            var endTime = startTime + TimeSpan.FromDays(30);
             while (DateTime.Now <= endTime)
             {
                 foreach (string Address in addresses)
@@ -50,16 +50,23 @@ namespace ConsoleApp2
             address = address + timeStamp;
             Console.WriteLine($"[{requestId}][{DateTime.Now}] Making request to: {address}");
             var response = await client.GetAsync(address);
-            if(response.StatusCode != HttpStatusCode.OK)
+            if (response.StatusCode != HttpStatusCode.OK)
             {
-                Console.WriteLine  ($"[{requestId}][{DateTime.Now}] Error (code {(int)response.StatusCode}):\n{await response.Content.ReadAsStringAsync()}");
-                Logi logi = new Logi();
-                    logi.adres= address;
-                    logi.serv_ans= (int)response.StatusCode;
-                    logi.time=timeStamp;
-                XmlSerializer xs = new XmlSerializer(typeof(Logi));
-                using (Stream s = File.Create("logi.xml"))
-                    xs.Serialize(s, logi);
+                Console.WriteLine($"[{requestId}][{DateTime.Now}] Error (code {(int)response.StatusCode}):\n{await response.Content.ReadAsStringAsync()}");
+//serializing into csv file
+                var logis = new List<Logi>()
+                {
+                   new Logi(){ logis.adres = address, logis.serv_ans= (int)response.StatusCode,  logis.time=timeStamp }
+
+            };
+                using (var streamWriter = File.CreateText("logi.csv"))
+                {
+                    var writer = new CsvWriter(streamWriter);
+                    writer.WriteRecords(logis);
+                }
+                //  XmlSerializer xs = new XmlSerializer(typeof(Logi));
+                //  using (Stream s = File.Create("logi.xml"))
+                //      xs.Serialize(s, logi);
             }
             else
             {
